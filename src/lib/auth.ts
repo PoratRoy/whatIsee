@@ -21,7 +21,7 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider === 'google') {
         try {
           await dbConnect();
-          
+
           // Check if user already exists
           const existingUser = await User.findOne({
             'googleCredentials.googleId': account.providerAccountId,

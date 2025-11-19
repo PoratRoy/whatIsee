@@ -10,7 +10,12 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         // Define protected routes
-        const protectedRoutes = ['/dashboard', '/profile', '/movies', '/series'];
+        const protectedRoutes = [
+          '/dashboard',
+          '/profile',
+          '/movies',
+          '/series',
+        ];
         const pathname = req.nextUrl.pathname;
 
         // Check if the current path is protected

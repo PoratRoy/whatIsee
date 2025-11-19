@@ -39,14 +39,14 @@ export function useAuth() {
 
 export function useRequireAuth() {
   const { session, status } = useAuth();
-  
+
   if (status === 'loading') {
     return { session: null, status, isLoading: true };
   }
-  
+
   if (status === 'unauthenticated' || !session) {
     return { session: null, status, isLoading: false, isUnauthenticated: true };
   }
-  
+
   return { session, status, isLoading: false, isAuthenticated: true };
 }
