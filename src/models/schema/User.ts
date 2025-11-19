@@ -1,0 +1,105 @@
+import mongoose, { Document, Schema } from 'mongoose';
+import { IMovie } from './Movie';
+import { ISeries } from './Series';
+import { ICategory } from './Category';
+
+export interface IGoogleCredentials {
+  googleId: string;
+  email: string;
+  name: string;
+  picture?: string;
+}
+
+export interface IUser extends Document {
+  name: string;
+  googleCredentials: IGoogleCredentials;
+  movies: IMovie['_id'][];
+  series: ISeries['_id'][];
+  categories: ICategory['_id'][];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const GoogleCredentialsSchema: Schema = new Schema(
+  {
+    googleId: {
+      type: String,
+      required: [true, 'Google ID is required'],
+      unique: true,
+    },
+    email: {
+      type: String,
+      required: [true, 'Email is required'],
+      unique: true,
+      lowercase: true,
+      trim: true,
+      validate: {
+        validator: function (v: string) {
+          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+        },
+        message: 'Please enter a valid email address',
+      },
+    },
+    name: {
+      type: String,
+      required: [true, 'Name is required'],
+      trim: true,
+      maxlength: [100, 'Name cannot exceed 100 characters'],
+    },
+    picture: {
+      type: String,
+      trim: true,
+      validate: {
+        validator: function (v: string) {
+          return !v || /^https?:\/\/.+/.test(v);
+        },
+        message: 'Picture must be a valid URL',
+      },
+    },
+  },
+  { _id: false }
+);
+
+const UserSchema: Schema = new Schema(
+  {
+    name: {
+      type: String,
+      required: [true, 'Name is required'],
+      trim: true,
+      maxlength: [100, 'Name cannot exceed 100 characters'],
+    },
+    googleCredentials: {
+      type: GoogleCredentialsSchema,
+      required: [true, 'Google credentials are required'],
+    },
+    movies: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Movie',
+      },
+    ],
+    series: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Series',
+      },
+    ],
+    categories: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Category',
+      },
+    ],
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Create indexes for better performance
+UserSchema.index({ 'googleCredentials.googleId': 1 });
+UserSchema.index({ 'googleCredentials.email': 1 });
+UserSchema.index({ name: 1 });
+
+export default mongoose.models.User ||
+  mongoose.model<IUser>('User', UserSchema);
