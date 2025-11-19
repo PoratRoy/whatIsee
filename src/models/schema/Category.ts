@@ -12,7 +12,6 @@ const CategorySchema: Schema = new Schema(
       type: String,
       required: [true, 'Category title is required'],
       trim: true,
-      unique: true,
       maxlength: [100, 'Category title cannot exceed 100 characters'],
     },
   },
@@ -21,8 +20,8 @@ const CategorySchema: Schema = new Schema(
   }
 );
 
-// Create index for better performance
-CategorySchema.index({ title: 1 });
+// Create unique index for better performance
+CategorySchema.index({ title: 1 }, { unique: true });
 
 export default mongoose.models.Category ||
   mongoose.model<ICategory>('Category', CategorySchema);

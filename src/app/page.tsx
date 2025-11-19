@@ -12,9 +12,18 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Film, Tv, LogOut, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Home() {
   const { session, status } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      router.push('/dashboard');
+    }
+  }, [session, status, router]);
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/' });

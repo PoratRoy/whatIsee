@@ -25,12 +25,10 @@ const GoogleCredentialsSchema: Schema = new Schema(
     googleId: {
       type: String,
       required: [true, 'Google ID is required'],
-      unique: true,
     },
     email: {
       type: String,
       required: [true, 'Email is required'],
-      unique: true,
       lowercase: true,
       trim: true,
       validate: {
@@ -96,10 +94,8 @@ const UserSchema: Schema = new Schema(
   }
 );
 
-// Create indexes for better performance
-UserSchema.index({ 'googleCredentials.googleId': 1 });
-UserSchema.index({ 'googleCredentials.email': 1 });
-UserSchema.index({ name: 1 });
+// Note: Indexes are managed by NextAuth MongoDBAdapter
+// Manual indexes removed to avoid conflicts
 
 export default mongoose.models.User ||
   mongoose.model<IUser>('User', UserSchema);
