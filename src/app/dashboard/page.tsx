@@ -10,14 +10,15 @@ import { SearchAndFilter } from '@/components/dashboard/SearchAndFilter';
 import { AddMoviePanel } from '@/components/movies/AddMoviePanel';
 import { CategoryManagementPanel } from '@/components/categories/CategoryManagementPanel';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { usePanel } from '@/context/PanelContext';
 
 export default function Dashboard() {
-  const { movies, isLoading, error, refetchMovies } = useData();
+  const { movies, categories, isLoading, error, refetchMovies } = useData();
   const { openPanel } = usePanel();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedWatchedStatus, setSelectedWatchedStatus] = useState('all');
 
   // Filter movies based on search term and selected category
   const filteredMovies = useMemo(() => {
@@ -28,16 +29,28 @@ export default function Dashboard() {
 
       const matchesCategory =
         selectedCategory && selectedCategory !== 'all'
-          ? movie.categories.includes(selectedCategory)
+          ? movie.categories.some((categoryTitle: string) => {
+              // Find the category by ID and match its name/title
+              const category = categories.find(
+                (cat: any) => cat._id === selectedCategory
+              );
+              return category && categoryTitle === category.name;
+            })
           : true;
 
-      return matchesSearch && matchesCategory;
+      const matchesWatchedStatus =
+        selectedWatchedStatus && selectedWatchedStatus !== 'all'
+          ? movie.watchedStatus === selectedWatchedStatus
+          : true;
+
+      return matchesSearch && matchesCategory && matchesWatchedStatus;
     });
-  }, [movies, searchTerm, selectedCategory]);
+  }, [movies, searchTerm, selectedCategory, selectedWatchedStatus, categories]);
 
   const handleClearFilters = () => {
     setSearchTerm('');
     setSelectedCategory('all');
+    setSelectedWatchedStatus('all');
   };
 
   if (error) {
@@ -53,7 +66,6 @@ export default function Dashboard() {
             <div className="text-center">
               <p className="text-destructive mb-4">{error}</p>
               <Button onClick={refetchMovies} variant="outline">
-                <RefreshCw className="mr-2 h-4 w-4" />
                 Try Again
               </Button>
             </div>
@@ -78,23 +90,14 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="flex gap-2">
-            <Button
-              onClick={refetchMovies}
-              variant="outline"
-              size="sm"
-              disabled={isLoading}
-            >
-              <RefreshCw
-                className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
-              />
-              Refresh
-            </Button>
-            <Button size="sm" onClick={() => openPanel('add-movie')}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Movie
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            onClick={() => openPanel('add-movie')}
+            className="bg-primary text-primary-foreground border-2 border-primary hover:bg-primary/90 hover:border-primary/90 transition-all duration-200 shadow-sm hover:shadow-md"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Movie
+          </Button>
         </div>
 
         {/* Search and Filter Section */}
@@ -102,8 +105,10 @@ export default function Dashboard() {
           <SearchAndFilter
             searchTerm={searchTerm}
             selectedCategory={selectedCategory}
+            selectedWatchedStatus={selectedWatchedStatus}
             onSearchChange={setSearchTerm}
             onCategoryChange={setSelectedCategory}
+            onWatchedStatusChange={setSelectedWatchedStatus}
             onClearFilters={handleClearFilters}
           />
         </div>

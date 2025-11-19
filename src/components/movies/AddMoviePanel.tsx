@@ -13,49 +13,82 @@ import {
 } from '@/components/ui/select';
 import { usePanel } from '@/context/PanelContext';
 import { useData } from '@/context/DataContext';
-import { Plus, X, Save, Image as ImageIcon } from 'lucide-react';
+import { createMovie } from '@/app/actions/createMovie';
+import { Plus, X, Save, Image as ImageIcon, Search } from 'lucide-react';
 
 interface MovieFormData {
   title: string;
   image: string;
   categories: string[];
   tags: string[];
+  watchedStatus: 'watched' | 'to_watch';
+}
+
+interface TMDBMovie {
+  id: number;
+  title: string;
+  overview: string;
+  imageUrl: string | null;
+  backdropUrl: string | null;
+  releaseDate: string;
+  rating: number;
+  genreIds: number[];
 }
 
 export function AddMoviePanel() {
   const { isOpen, closePanel } = usePanel();
-  const { categories } = useData();
+  const { categories, refetchMovies } = useData();
   const [isLoading, setIsLoading] = useState(false);
   const [newTag, setNewTag] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<TMDBMovie[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<MovieFormData>({
     title: '',
     image: '',
     categories: [],
     tags: [],
+    watchedStatus: 'watched',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
-      // TODO: Implement movie creation API call
-      console.log('Creating movie:', formData);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Reset form and close panel
-      setFormData({
-        title: '',
-        image: '',
-        categories: [],
-        tags: [],
+      const result = await createMovie({
+        title: formData.title,
+        image: formData.image || undefined,
+        categories: formData.categories,
+        tags: formData.tags,
+        watchedStatus: formData.watchedStatus,
       });
-      closePanel();
+
+      if (result.success) {
+        // Reset form and close panel
+        setFormData({
+          title: '',
+          image: '',
+          categories: [],
+          tags: [],
+          watchedStatus: 'watched',
+        });
+        setShowSearchResults(false);
+        setSearchResults([]);
+
+        // Refresh the movies list
+        await refetchMovies();
+
+        closePanel();
+      } else {
+        setError(result.error || 'Failed to create movie');
+      }
     } catch (error) {
       console.error('Error creating movie:', error);
+      setError('An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
@@ -87,36 +120,177 @@ export function AddMoviePanel() {
     }));
   };
 
+  const handleSearchTMDB = async () => {
+    if (!formData.title.trim()) {
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `/api/tmdb?query=${encodeURIComponent(formData.title)}`
+      );
+      const data = await response.json();
+
+      if (data.success) {
+        setSearchResults(data.movies);
+        setShowSearchResults(true);
+      } else {
+        console.error('TMDB search error:', data.error);
+      }
+    } catch (error) {
+      console.error('Error searching TMDB:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSelectMovie = (movie: TMDBMovie) => {
+    setFormData((prev) => ({
+      ...prev,
+      title: movie.title,
+      image: movie.imageUrl || '',
+    }));
+    setShowSearchResults(false);
+  };
+
+  const handleClose = () => {
+    setFormData({
+      title: '',
+      image: '',
+      categories: [],
+      tags: [],
+      watchedStatus: 'watched',
+    });
+    setNewTag('');
+    setError(null);
+    setShowSearchResults(false);
+    setSearchResults([]);
+    closePanel();
+  };
+
   return (
     <SlidePanel
       isOpen={isOpen('add-movie')}
-      onClose={closePanel}
+      onClose={handleClose}
       title="Add New Movie"
       size="lg"
     >
-      <form onSubmit={handleSubmit} className="p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="p-8 space-y-8">
         {/* Movie Title */}
-        <div className="space-y-2">
-          <label htmlFor="title" className="text-sm font-medium">
+        <div className="space-y-3">
+          <label
+            htmlFor="title"
+            className="text-sm font-semibold text-foreground"
+          >
             Movie Title *
           </label>
-          <Input
-            id="title"
-            value={formData.title}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, title: e.target.value }))
-            }
-            placeholder="Enter movie title"
-            required
-          />
+          <div className="flex gap-3">
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, title: e.target.value }))
+              }
+              placeholder="Enter movie title"
+              required
+              className="flex-1 h-11 px-4 text-base border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={handleSearchTMDB}
+              disabled={!formData.title.trim() || isSearching}
+              className="h-11 px-4 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-200"
+            >
+              {isSearching ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          {error && (
+            <p className="text-sm text-destructive font-medium bg-destructive/10 px-3 py-2 rounded-md">
+              {error}
+            </p>
+          )}
         </div>
 
+        {/* TMDB Search Results */}
+        {showSearchResults && searchResults.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold text-foreground">
+                Search Results from TMDB
+              </label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSearchResults(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="max-h-64 overflow-y-auto space-y-2 border-2 border-border rounded-xl p-4 bg-muted/30">
+              {searchResults.map((movie) => (
+                <div
+                  key={movie.id}
+                  className="flex items-center gap-4 p-3 hover:bg-white hover:shadow-md rounded-xl cursor-pointer transition-all duration-200 border border-transparent hover:border-border"
+                  onClick={() => handleSelectMovie(movie)}
+                >
+                  {movie.imageUrl ? (
+                    <img
+                      src={movie.imageUrl}
+                      alt={movie.title}
+                      className="w-12 h-16 object-cover rounded"
+                    />
+                  ) : (
+                    <div className="w-12 h-16 bg-muted rounded flex items-center justify-center">
+                      <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium truncate">{movie.title}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {movie.releaseDate
+                        ? new Date(movie.releaseDate).getFullYear()
+                        : 'Unknown'}
+                    </p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {movie.overview}
+                    </p>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    ⭐ {movie.rating.toFixed(1)}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSearchResults(false)}
+              className="w-full"
+            >
+              Hide Results
+            </Button>
+          </div>
+        )}
+
         {/* Movie Image */}
-        <div className="space-y-2">
-          <label htmlFor="image" className="text-sm font-medium">
-            Image URL
+        <div className="space-y-3">
+          <label
+            htmlFor="image"
+            className="text-sm font-semibold text-foreground"
+          >
+            Movie Poster URL
           </label>
-          <div className="space-y-2">
+          <div className="space-y-4">
             <Input
               id="image"
               value={formData.image}
@@ -125,6 +299,7 @@ export function AddMoviePanel() {
               }
               placeholder="https://example.com/movie-poster.jpg"
               type="url"
+              className="h-11 px-4 text-base border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
             />
             {formData.image && (
               <div className="relative w-32 h-48 border rounded-lg overflow-hidden bg-muted">
@@ -145,32 +320,60 @@ export function AddMoviePanel() {
         </div>
 
         {/* Categories */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Categories</label>
-          <div className="space-y-2">
+        <div className="space-y-3">
+          <label className="text-sm font-semibold text-foreground">
+            Categories
+          </label>
+          <div className="space-y-3 max-h-40 overflow-y-auto border-2 border-border rounded-xl p-4 bg-muted/20">
             {categories.map((category) => (
-              <label key={category._id} className="flex items-center space-x-2">
+              <label
+                key={category._id}
+                className="flex items-center space-x-3 cursor-pointer group"
+              >
                 <input
                   type="checkbox"
                   checked={formData.categories.includes(category._id)}
                   onChange={() => handleCategoryChange(category._id)}
-                  className="rounded border-gray-300"
+                  className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                 />
-                <span className="text-sm">{category.name}</span>
+                <span className="text-sm font-medium group-hover:text-primary transition-colors duration-200">
+                  {category.name}
+                </span>
               </label>
             ))}
             {categories.length === 0 && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground text-center py-4">
                 No categories available. Create some categories first.
               </p>
             )}
           </div>
         </div>
 
+        {/* Watched Status */}
+        <div className="space-y-3">
+          <label className="text-sm font-semibold text-foreground">
+            Watched Status
+          </label>
+          <Select
+            value={formData.watchedStatus}
+            onValueChange={(value: 'watched' | 'to_watch') =>
+              setFormData((prev) => ({ ...prev, watchedStatus: value }))
+            }
+          >
+            <SelectTrigger className="h-11 px-4 text-base border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+              <SelectValue placeholder="Select watched status" />
+            </SelectTrigger>
+            <SelectContent className="z-9999 bg-white border border-border shadow-lg">
+              <SelectItem value="watched">Watched</SelectItem>
+              <SelectItem value="to_watch">To Watch</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Tags */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Tags</label>
-          <div className="flex gap-2">
+        <div className="space-y-3">
+          <label className="text-sm font-semibold text-foreground">Tags</label>
+          <div className="flex gap-3">
             <Input
               value={newTag}
               onChange={(e) => setNewTag(e.target.value)}
@@ -181,29 +384,31 @@ export function AddMoviePanel() {
                   handleAddTag();
                 }
               }}
+              className="flex-1 h-11 px-4 text-base border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
             />
             <Button
               type="button"
               variant="outline"
-              size="sm"
+              size="lg"
               onClick={handleAddTag}
               disabled={!newTag.trim()}
+              className="h-11 px-4 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-200"
             >
               <Plus className="h-4 w-4" />
             </Button>
           </div>
           {formData.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-2">
+            <div className="flex flex-wrap gap-2 p-3 border-2 border-border rounded-xl bg-muted/20">
               {formData.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center gap-1 px-2 py-1 bg-secondary text-secondary-foreground rounded-md text-xs"
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-primary/10 text-primary border border-primary/20 rounded-lg text-sm font-medium"
                 >
                   {tag}
                   <button
                     type="button"
                     onClick={() => handleRemoveTag(tag)}
-                    className="hover:bg-secondary-foreground/20 rounded-full p-0.5"
+                    className="hover:bg-primary/20 rounded-full p-1 transition-colors duration-200"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -214,22 +419,25 @@ export function AddMoviePanel() {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 pt-4 border-t">
-          <Button
-            type="submit"
-            disabled={!formData.title.trim() || isLoading}
-            className="flex-1"
-          >
-            <Save className="mr-2 h-4 w-4" />
-            {isLoading ? 'Creating...' : 'Create Movie'}
-          </Button>
+        <div className="flex gap-4 pt-6 border-t-2 border-border">
           <Button
             type="button"
             variant="outline"
-            onClick={closePanel}
+            size="lg"
+            onClick={handleClose}
             disabled={isLoading}
+            className="h-12 px-6 text-base font-medium border-2 hover:border-primary hover:bg-primary/5 transition-all duration-200"
           >
             Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={!formData.title.trim() || isLoading}
+            size="lg"
+            className="flex-1 h-12 text-base font-semibold bg-primary hover:bg-primary/90 border-2 border-primary transition-all duration-200"
+          >
+            <Save className="mr-2 h-5 w-5" />
+            {isLoading ? 'Creating...' : 'Create Movie'}
           </Button>
         </div>
       </form>

@@ -6,6 +6,7 @@ export interface IMovie extends Document {
   image?: string;
   categories: ICategory['_id'][];
   tags: string[];
+  watchedStatus: 'watched' | 'to_watch';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +43,12 @@ const MovieSchema: Schema = new Schema(
         maxlength: [50, 'Tag cannot exceed 50 characters'],
       },
     ],
+    watchedStatus: {
+      type: String,
+      enum: ['watched', 'to_watch'],
+      default: 'watched',
+      required: true,
+    },
   },
   {
     timestamps: true,
@@ -52,6 +59,7 @@ const MovieSchema: Schema = new Schema(
 MovieSchema.index({ title: 1 });
 MovieSchema.index({ categories: 1 });
 MovieSchema.index({ tags: 1 });
+MovieSchema.index({ watchedStatus: 1 });
 
 export default mongoose.models.Movie ||
   mongoose.model<IMovie>('Movie', MovieSchema);

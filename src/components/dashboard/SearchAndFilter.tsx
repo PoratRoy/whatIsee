@@ -17,16 +17,20 @@ import { usePanel } from '@/context/PanelContext';
 interface SearchAndFilterProps {
   searchTerm: string;
   selectedCategory: string;
+  selectedWatchedStatus: string;
   onSearchChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
+  onWatchedStatusChange: (value: string) => void;
   onClearFilters: () => void;
 }
 
 export function SearchAndFilter({
   searchTerm,
   selectedCategory,
+  selectedWatchedStatus,
   onSearchChange,
   onCategoryChange,
+  onWatchedStatusChange,
   onClearFilters,
 }: SearchAndFilterProps) {
   const { categories } = useData();
@@ -34,49 +38,64 @@ export function SearchAndFilter({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const hasActiveFilters =
-    searchTerm || (selectedCategory && selectedCategory !== 'all');
+    searchTerm ||
+    (selectedCategory && selectedCategory !== 'all') ||
+    (selectedWatchedStatus && selectedWatchedStatus !== 'all');
 
   return (
     <div className="space-y-4">
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search movies by title..."
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-10 pr-4"
-        />
-      </div>
-
-      {/* Filter Section */}
+      {/* Search and Filter Row */}
       <div className="flex items-center gap-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsFilterOpen(!isFilterOpen)}
-          className="flex items-center gap-2"
-        >
-          <Filter className="h-4 w-4" />
-          Filters
-          {hasActiveFilters && (
-            <span className="ml-1 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
-              {[searchTerm, selectedCategory].filter(Boolean).length}
-            </span>
-          )}
-        </Button>
+        {/* Search Bar */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search movies by title..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-10 pr-4"
+          />
+        </div>
 
-        {hasActiveFilters && (
+        {/* Filter Section */}
+        <div className="flex items-center gap-4">
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            onClick={onClearFilters}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            className="flex items-center gap-2"
           >
-            <X className="h-4 w-4" />
-            Clear all
+            <Filter
+              className={`h-4 w-4 ${isFilterOpen ? 'fill-current' : ''}`}
+            />
+            Filters
+            {hasActiveFilters && (
+              <span className="ml-1 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
+                {
+                  [
+                    searchTerm,
+                    selectedCategory !== 'all' ? selectedCategory : null,
+                    selectedWatchedStatus !== 'all'
+                      ? selectedWatchedStatus
+                      : null,
+                  ].filter(Boolean).length
+                }
+              </span>
+            )}
           </Button>
-        )}
+
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClearFilters}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+              Clear all
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Filter Options */}
@@ -122,7 +141,7 @@ export function SearchAndFilter({
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="All categories" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-9999 bg-white border border-border shadow-lg">
                     <SelectItem value="all">All categories</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category._id} value={category._id}>
@@ -132,6 +151,26 @@ export function SearchAndFilter({
                   </SelectContent>
                 </Select>
               )}
+            </div>
+
+            {/* Watched Status Filter */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Filter by Watched Status
+              </label>
+              <Select
+                value={selectedWatchedStatus}
+                onValueChange={onWatchedStatusChange}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All movies" />
+                </SelectTrigger>
+                <SelectContent className="z-9999 bg-white border border-border shadow-lg">
+                  <SelectItem value="all">All movies</SelectItem>
+                  <SelectItem value="watched">Watched</SelectItem>
+                  <SelectItem value="to_watch">To Watch</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Active Filters Display */}
@@ -156,6 +195,20 @@ export function SearchAndFilter({
                       {categories.find((c) => c._id === selectedCategory)?.name}
                       <button
                         onClick={() => onCategoryChange('all')}
+                        className="hover:bg-secondary-foreground/20 rounded-full p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  )}
+                  {selectedWatchedStatus && selectedWatchedStatus !== 'all' && (
+                    <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-xs flex items-center gap-1">
+                      Status:{' '}
+                      {selectedWatchedStatus === 'watched'
+                        ? 'Watched'
+                        : 'To Watch'}
+                      <button
+                        onClick={() => onWatchedStatusChange('all')}
                         className="hover:bg-secondary-foreground/20 rounded-full p-0.5"
                       >
                         <X className="h-3 w-3" />

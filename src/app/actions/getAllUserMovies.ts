@@ -13,6 +13,7 @@ export interface MovieData {
   image?: string;
   categories: string[];
   tags: string[];
+  watchedStatus: 'watched' | 'to_watch';
   createdAt: string;
   updatedAt: string;
 }
@@ -65,6 +66,7 @@ export async function getAllUserMovies(): Promise<{
       image: movie.image,
       categories: movie.categories.map((cat: any) => cat.title),
       tags: movie.tags,
+      watchedStatus: movie.watchedStatus || 'watched',
       createdAt: movie.createdAt.toISOString(),
       updatedAt: movie.updatedAt.toISOString(),
     }));

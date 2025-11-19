@@ -9,14 +9,14 @@ interface MovieCardProps {
 
 export function MovieCard({ movie }: MovieCardProps) {
   return (
-    <Card className="group cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105">
+    <Card className="">
       <CardContent className="p-0">
         <div className="aspect-2/3 relative overflow-hidden rounded-t-lg bg-muted">
           {movie.image ? (
             <img
               src={movie.image}
               alt={movie.title}
-              className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-110"
+              className="w-full h-full object-cover"
               loading="lazy"
             />
           ) : (

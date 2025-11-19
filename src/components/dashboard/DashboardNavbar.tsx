@@ -42,7 +42,7 @@ export function DashboardNavbar() {
                       <img
                         src={session.user.image}
                         alt={session.user.name || 'User'}
-                        className="h-10 w-10 rounded-full object-cover"
+                        className="h-8 w-8 rounded-full object-cover"
                         referrerPolicy="no-referrer"
                       />
                     ) : (

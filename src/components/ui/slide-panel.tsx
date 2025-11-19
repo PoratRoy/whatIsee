@@ -66,7 +66,7 @@ export function SlidePanel({
       {/* Backdrop with blur */}
       <div
         className={cn(
-          'fixed inset-0 z-40 bg-black/20 backdrop-blur-sm transition-opacity duration-500',
+          'fixed inset-0 z-9998 bg-black/20 backdrop-blur-sm transition-opacity duration-500',
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         )}
         onClick={handleBackdropClick}
@@ -75,7 +75,7 @@ export function SlidePanel({
       {/* Slide Panel */}
       <div
         className={cn(
-          'fixed top-0 left-0 h-full bg-background border-r shadow-2xl z-50',
+          'fixed top-0 left-0 h-full bg-white border-r shadow-2xl z-9999',
           'transform transition-transform duration-500 ease-out',
           'flex flex-col',
           sizeClasses[size],
