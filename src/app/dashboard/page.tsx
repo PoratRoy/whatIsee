@@ -8,9 +8,10 @@ import { EmptyMovieList } from '@/components/movies/EmptyMovieList';
 import { DashboardNavbar } from '@/components/dashboard/DashboardNavbar';
 import { SearchAndFilter } from '@/components/dashboard/SearchAndFilter';
 import { AddMoviePanel } from '@/components/movies/AddMoviePanel';
+import { BrowseMoviesPanel } from '@/components/movies/BrowseMoviesPanel';
 import { CategoryManagementPanel } from '@/components/categories/CategoryManagementPanel';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { usePanel } from '@/context/PanelContext';
 
 export default function Dashboard() {
@@ -79,7 +80,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <DashboardNavbar />
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
           <div>
             <h1 className="text-3xl font-bold text-foreground">My Movies</h1>
             {!isLoading && (
@@ -90,14 +91,25 @@ export default function Dashboard() {
             )}
           </div>
 
-          <Button
-            size="sm"
-            onClick={() => openPanel('add-movie')}
-            className="bg-primary text-primary-foreground border-2 border-primary hover:bg-primary/90 hover:border-primary/90 transition-all duration-200 shadow-sm hover:shadow-md"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Movie
-          </Button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button
+              size="sm"
+              onClick={() => openPanel('browse-movies')}
+              variant="outline"
+              className="flex-1 sm:flex-none border-2 hover:border-primary hover:bg-primary/5 transition-all duration-200"
+            >
+              <Search className="mr-2 h-4 w-4" />
+              Browse Movies
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => openPanel('add-movie')}
+              className="flex-1 sm:flex-none bg-primary text-primary-foreground border-2 border-primary hover:bg-primary/90 hover:border-primary/90 transition-all duration-200 shadow-sm hover:shadow-md"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Movie
+            </Button>
+          </div>
         </div>
 
         {/* Search and Filter Section */}
@@ -139,6 +151,7 @@ export default function Dashboard() {
 
       {/* Slide Panels */}
       <AddMoviePanel />
+      <BrowseMoviesPanel />
       <CategoryManagementPanel />
     </div>
   );

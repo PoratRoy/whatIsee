@@ -19,7 +19,7 @@ import { Plus, X, Save, Image as ImageIcon, Search } from 'lucide-react';
 interface MovieFormData {
   title: string;
   image: string;
-  categories: string[];
+  category: string;
   tags: string[];
   watchedStatus: 'watched' | 'to_watch';
 }
@@ -48,7 +48,7 @@ export function AddMoviePanel() {
   const [formData, setFormData] = useState<MovieFormData>({
     title: '',
     image: '',
-    categories: [],
+    category: 'none',
     tags: [],
     watchedStatus: 'watched',
   });
@@ -62,7 +62,7 @@ export function AddMoviePanel() {
       const result = await createMovie({
         title: formData.title,
         image: formData.image || undefined,
-        categories: formData.categories,
+        categories: formData.category && formData.category !== 'none' ? [formData.category] : [],
         tags: formData.tags,
         watchedStatus: formData.watchedStatus,
       });
@@ -72,7 +72,7 @@ export function AddMoviePanel() {
         setFormData({
           title: '',
           image: '',
-          categories: [],
+          category: 'none',
           tags: [],
           watchedStatus: 'watched',
         });
@@ -114,9 +114,7 @@ export function AddMoviePanel() {
   const handleCategoryChange = (categoryId: string) => {
     setFormData((prev) => ({
       ...prev,
-      categories: prev.categories.includes(categoryId)
-        ? prev.categories.filter((id) => id !== categoryId)
-        : [...prev.categories, categoryId],
+      category: categoryId,
     }));
   };
 
@@ -158,7 +156,7 @@ export function AddMoviePanel() {
     setFormData({
       title: '',
       image: '',
-      categories: [],
+      category: 'none',
       tags: [],
       watchedStatus: 'watched',
     });
@@ -176,7 +174,9 @@ export function AddMoviePanel() {
       title="Add New Movie"
       size="lg"
     >
-      <form onSubmit={handleSubmit} className="p-8 space-y-8">
+      <form onSubmit={handleSubmit} className="flex flex-col h-full">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-8 space-y-8">
         {/* Movie Title */}
         <div className="space-y-3">
           <label
@@ -322,31 +322,32 @@ export function AddMoviePanel() {
         {/* Categories */}
         <div className="space-y-3">
           <label className="text-sm font-semibold text-foreground">
-            Categories
+            Category
           </label>
-          <div className="space-y-3 max-h-40 overflow-y-auto border-2 border-border rounded-xl p-4 bg-muted/20">
-            {categories.map((category) => (
-              <label
-                key={category._id}
-                className="flex items-center space-x-3 cursor-pointer group"
-              >
-                <input
-                  type="checkbox"
-                  checked={formData.categories.includes(category._id)}
-                  onChange={() => handleCategoryChange(category._id)}
-                  className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                />
-                <span className="text-sm font-medium group-hover:text-primary transition-colors duration-200">
-                  {category.name}
-                </span>
-              </label>
-            ))}
-            {categories.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">
+          {categories.length === 0 ? (
+            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center">
+              <p className="text-sm text-muted-foreground mb-2">
                 No categories available. Create some categories first.
               </p>
-            )}
-          </div>
+            </div>
+          ) : (
+            <Select
+              value={formData.category}
+              onValueChange={handleCategoryChange}
+            >
+              <SelectTrigger className="h-11 px-4 text-base border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                <SelectValue placeholder="Select a category (optional)" />
+              </SelectTrigger>
+              <SelectContent className="z-9999 bg-white border border-border shadow-lg">
+                <SelectItem value="none">No category</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category._id} value={category._id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {/* Watched Status */}
@@ -418,27 +419,31 @@ export function AddMoviePanel() {
           )}
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-4 pt-6 border-t-2 border-border">
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            onClick={handleClose}
-            disabled={isLoading}
-            className="h-12 px-6 text-base font-medium border-2 hover:border-primary hover:bg-primary/5 transition-all duration-200"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={!formData.title.trim() || isLoading}
-            size="lg"
-            className="flex-1 h-12 text-base font-semibold bg-primary hover:bg-primary/90 border-2 border-primary transition-all duration-200"
-          >
-            <Save className="mr-2 h-5 w-5" />
-            {isLoading ? 'Creating...' : 'Create Movie'}
-          </Button>
+        </div>
+
+        {/* Fixed Actions Section */}
+        <div className="shrink-0 p-6 border-t-2 border-border bg-background">
+          <div className="flex gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={handleClose}
+              disabled={isLoading}
+              className="h-12 px-6 text-base font-medium border-2 hover:border-primary hover:bg-primary/5 transition-all duration-200"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={!formData.title.trim() || isLoading}
+              size="lg"
+              className="flex-1 h-12 text-base font-semibold bg-primary hover:bg-primary/90 border-2 border-primary transition-all duration-200"
+            >
+              <Save className="mr-2 h-5 w-5" />
+              {isLoading ? 'Creating...' : 'Create Movie'}
+            </Button>
+          </div>
         </div>
       </form>
     </SlidePanel>

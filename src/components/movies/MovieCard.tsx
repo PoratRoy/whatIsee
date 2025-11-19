@@ -54,17 +54,17 @@ export function MovieCard({ movie }: MovieCardProps) {
           )}
 
           {movie.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1 mt-2">
               {movie.tags.slice(0, 3).map((tag) => (
                 <span
                   key={tag}
-                  className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded"
+                  className="text-xs text-primary bg-primary/10 border border-primary/20 px-2 py-1 rounded-md font-medium"
                 >
-                  {tag}
+                  #{tag}
                 </span>
               ))}
               {movie.tags.length > 3 && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">
                   +{movie.tags.length - 3} more
                 </span>
               )}

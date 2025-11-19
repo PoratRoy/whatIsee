@@ -11,7 +11,7 @@ interface SlidePanelProps {
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
 }
 
@@ -58,7 +58,8 @@ export function SlidePanel({
   const sizeClasses = {
     sm: 'w-80', // 320px
     md: 'w-96', // 384px
-    lg: 'w-1/2', // 50% width
+    lg: 'w-[100%] md:w-1/2 lg:w-2/5', // 99% on mobile, 50% on md, 40% on lg+
+    xl: 'w-[99%] md:w-3/4 lg:w-3/4', // 99% on mobile, 75% on md and lg+
   };
 
   const panelContent = (

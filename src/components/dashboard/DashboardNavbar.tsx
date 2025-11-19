@@ -36,13 +36,13 @@ export function DashboardNavbar() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="relative h-10 w-10 rounded-full"
+                    className="relative h-10 w-10 rounded-full p-0 overflow-hidden cursor-pointer"
                   >
                     {session.user.image ? (
                       <img
                         src={session.user.image}
                         alt={session.user.name || 'User'}
-                        className="h-8 w-8 rounded-full object-cover"
+                        className="h-full w-full rounded-full object-cover"
                         referrerPolicy="no-referrer"
                       />
                     ) : (
@@ -50,7 +50,7 @@ export function DashboardNavbar() {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuContent className="w-56 z-[9999] bg-white border border-border shadow-lg" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">
