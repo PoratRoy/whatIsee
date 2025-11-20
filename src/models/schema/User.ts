@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 import { IMovie } from './Movie';
 import { ISeries } from './Series';
 import { ICategory } from './Category';
+import { ITag } from './Tag';
 
 export interface IGoogleCredentials {
   googleId: string;
@@ -16,6 +17,7 @@ export interface IUser extends Document {
   movies: IMovie['_id'][];
   series: ISeries['_id'][];
   categories: ICategory['_id'][];
+  tags: ITag['_id'][];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -86,6 +88,12 @@ const UserSchema: Schema = new Schema(
       {
         type: Schema.Types.ObjectId,
         ref: 'Category',
+      },
+    ],
+    tags: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Tag',
       },
     ],
   },

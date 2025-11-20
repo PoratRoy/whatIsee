@@ -6,6 +6,7 @@ import dbConnect from '@/lib/mongodb';
 import User from '@/models/schema/User';
 import Movie from '@/models/schema/Movie';
 import Category from '@/models/schema/Category';
+import Tag from '@/models/schema/Tag';
 
 export interface CreateMovieData {
   title: string;
@@ -103,12 +104,22 @@ export async function createMovie(movieData: CreateMovieData): Promise<{
       };
     }
 
+    // Validate tags belong to the user
+    let validatedTags: string[] = [];
+    if (movieData.tags && movieData.tags.length > 0) {
+      const userTags = await Tag.find({
+        _id: { $in: movieData.tags },
+        user: user._id,
+      });
+      validatedTags = userTags.map(tag => tag._id.toString());
+    }
+
     // Create new movie
     const newMovie = new Movie({
       title: movieData.title.trim(),
       image: movieData.image?.trim() || undefined,
       categories: movieData.categories,
-      tags: movieData.tags.filter((tag) => tag.trim().length > 0),
+      tags: validatedTags,
       watchedStatus: movieData.watchedStatus || 'watched',
     });
 
@@ -125,7 +136,7 @@ export async function createMovie(movieData: CreateMovieData): Promise<{
         title: newMovie.title,
         image: newMovie.image,
         categories: newMovie.categories.map((id: any) => id.toString()),
-        tags: newMovie.tags,
+        tags: newMovie.tags.map((id: any) => id.toString()),
         watchedStatus: newMovie.watchedStatus,
         createdAt: newMovie.createdAt.toISOString(),
         updatedAt: newMovie.updatedAt.toISOString(),

@@ -14,7 +14,8 @@ import {
 import { usePanel } from '@/context/PanelContext';
 import { useData } from '@/context/DataContext';
 import { createMovie } from '@/app/actions/createMovie';
-import { Plus, X, Save, Image as ImageIcon, Search } from 'lucide-react';
+import { createTag } from '@/app/actions/createTag';
+import { Plus, X, Save, Image as ImageIcon, Search, Tag as TagIcon } from 'lucide-react';
 
 interface MovieFormData {
   title: string;
@@ -37,9 +38,12 @@ interface TMDBMovie {
 
 export function AddMoviePanel() {
   const { isOpen, closePanel } = usePanel();
-  const { categories, refetchMovies } = useData();
+  const { categories, tags, refetchMovies, refetchTags } = useData();
   const [isLoading, setIsLoading] = useState(false);
   const [newTag, setNewTag] = useState('');
+  const [isCreatingTag, setIsCreatingTag] = useState(false);
+  const [showCreateTag, setShowCreateTag] = useState(false);
+  const [selectedTagValue, setSelectedTagValue] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<TMDBMovie[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -94,13 +98,41 @@ export function AddMoviePanel() {
     }
   };
 
-  const handleAddTag = () => {
-    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
+  const handleAddTag = (tagId: string) => {
+    if (tagId && tagId !== 'none' && !formData.tags.includes(tagId)) {
       setFormData((prev) => ({
         ...prev,
-        tags: [...prev.tags, newTag.trim()],
+        tags: [...prev.tags, tagId],
       }));
-      setNewTag('');
+    }
+    // Clear the select value after selection
+    setSelectedTagValue('');
+  };
+
+  const handleCreateTag = async () => {
+    if (!newTag.trim()) return;
+
+    setIsCreatingTag(true);
+    try {
+      const result = await createTag({
+        name: newTag.trim(),
+      });
+
+      if (result.success && result.tag) {
+        // Add the new tag to the form
+        handleAddTag(result.tag._id);
+        // Refresh tags list
+        await refetchTags();
+        // Reset form
+        setNewTag('');
+        setShowCreateTag(false);
+      } else {
+        setError(result.error || 'Failed to create tag');
+      }
+    } catch (err) {
+      setError('Failed to create tag');
+    } finally {
+      setIsCreatingTag(false);
     }
   };
 
@@ -161,6 +193,9 @@ export function AddMoviePanel() {
       watchedStatus: 'watched',
     });
     setNewTag('');
+    setShowCreateTag(false);
+    setIsCreatingTag(false);
+    setSelectedTagValue('');
     setError(null);
     setShowSearchResults(false);
     setSearchResults([]);
@@ -374,47 +409,111 @@ export function AddMoviePanel() {
         {/* Tags */}
         <div className="space-y-3">
           <label className="text-sm font-semibold text-foreground">Tags</label>
-          <div className="flex gap-3">
-            <Input
-              value={newTag}
-              onChange={(e) => setNewTag(e.target.value)}
-              placeholder="Add a tag"
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddTag();
-                }
-              }}
-              className="flex-1 h-11 px-4 text-base border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              onClick={handleAddTag}
-              disabled={!newTag.trim()}
-              className="h-11 px-4 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-200"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+          
+          {/* Tag Selection */}
+          <div className="space-y-3">
+            <Select value={selectedTagValue} onValueChange={handleAddTag}>
+              <SelectTrigger className="h-11 px-4 text-base border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                <SelectValue placeholder="Select a tag to add" />
+              </SelectTrigger>
+              <SelectContent className="z-9999 bg-white border border-border shadow-lg">
+                <SelectItem value="none">No tags</SelectItem>
+                {tags.length === 0 ? (
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                    No tags available
+                  </div>
+                ) : (
+                  tags
+                    .filter(tag => !formData.tags.includes(tag._id))
+                    .map((tag) => (
+                      <SelectItem key={tag._id} value={tag._id}>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: tag.color }}
+                          />
+                          {tag.name}
+                        </div>
+                      </SelectItem>
+                    ))
+                )}
+              </SelectContent>
+            </Select>
+
+            {/* Create New Tag */}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCreateTag(!showCreateTag)}
+                className="flex items-center gap-2"
+              >
+                <TagIcon className="h-4 w-4" />
+                {showCreateTag ? 'Cancel' : 'Create New Tag'}
+              </Button>
+            </div>
+
+            {showCreateTag && (
+              <div className="space-y-3 p-4 border-2 border-dashed border-border rounded-lg bg-muted/10">
+                <div className="flex gap-2">
+                  <Input
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    placeholder="Enter tag name"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleCreateTag();
+                      }
+                    }}
+                    className="flex-1 h-10"
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleCreateTag}
+                    disabled={!newTag.trim() || isCreatingTag}
+                    size="sm"
+                    className="h-10"
+                  >
+                    {isCreatingTag ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* Selected Tags */}
           {formData.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 p-3 border-2 border-border rounded-xl bg-muted/20">
-              {formData.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center gap-2 px-3 py-2 bg-primary/10 text-primary border border-primary/20 rounded-lg text-sm font-medium"
-                >
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveTag(tag)}
-                    className="hover:bg-primary/20 rounded-full p-1 transition-colors duration-200"
+              {formData.tags.map((tagId) => {
+                const tag = tags.find(t => t._id === tagId);
+                return (
+                  <span
+                    key={tagId}
+                    className="inline-flex items-center gap-2 px-3 py-2 bg-primary/10 text-primary border border-primary/20 rounded-lg text-sm font-medium"
                   >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              ))}
+                    {tag && (
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: tag.color }}
+                      />
+                    )}
+                    {tag ? tag.name : 'Unknown Tag'}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tagId)}
+                      className="hover:bg-primary/20 rounded-full p-1 transition-colors duration-200"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                );
+              })}
             </div>
           )}
         </div>

@@ -1,11 +1,12 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import { ICategory } from './Category';
+import { ITag } from './Tag';
 
 export interface IMovie extends Document {
   title: string;
   image?: string;
   categories: ICategory['_id'][];
-  tags: string[];
+  tags: ITag['_id'][];
   watchedStatus: 'watched' | 'to_watch';
   createdAt: Date;
   updatedAt: Date;
@@ -38,9 +39,8 @@ const MovieSchema: Schema = new Schema(
     ],
     tags: [
       {
-        type: String,
-        trim: true,
-        maxlength: [50, 'Tag cannot exceed 50 characters'],
+        type: Schema.Types.ObjectId,
+        ref: 'Tag',
       },
     ],
     watchedStatus: {

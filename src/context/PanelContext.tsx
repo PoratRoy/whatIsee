@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
 
-type PanelType = 'add-movie' | 'edit-movie' | 'manage-categories' | 'browse-movies' | null;
+type PanelType = 'add-movie' | 'add-series' | 'edit-movie' | 'manage-categories' | 'browse-movies' | 'browse-series' | null;
 
 interface PanelContextType {
   activePanel: PanelType;

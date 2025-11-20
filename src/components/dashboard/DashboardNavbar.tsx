@@ -11,9 +11,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Film, Tv } from 'lucide-react';
 
-export function DashboardNavbar() {
+interface DashboardNavbarProps {
+  contentType: 'movies' | 'series';
+  onContentTypeChange: (type: 'movies' | 'series') => void;
+}
+
+export function DashboardNavbar({ contentType, onContentTypeChange }: DashboardNavbarProps) {
   const { session } = useAuth();
 
   const handleSignOut = async () => {
@@ -27,6 +32,28 @@ export function DashboardNavbar() {
           {/* Site Name */}
           <div className="flex items-center space-x-4">
             <h1 className="text-xl font-bold text-foreground">What I See</h1>
+          </div>
+
+          {/* Content Type Toggle */}
+          <div className="flex items-center bg-muted rounded-lg p-1">
+            <Button
+              variant={contentType === 'movies' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => onContentTypeChange('movies')}
+              className="rounded-md px-3 py-1 text-sm"
+            >
+              <Film className="mr-2 h-4 w-4" />
+              Movies
+            </Button>
+            <Button
+              variant={contentType === 'series' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => onContentTypeChange('series')}
+              className="rounded-md px-3 py-1 text-sm"
+            >
+              <Tv className="mr-2 h-4 w-4" />
+              Series
+            </Button>
           </div>
 
           {/* User Profile */}

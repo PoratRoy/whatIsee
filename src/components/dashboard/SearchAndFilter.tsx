@@ -18,9 +18,12 @@ interface SearchAndFilterProps {
   searchTerm: string;
   selectedCategory: string;
   selectedWatchedStatus: string;
+  selectedTags: string[];
   onSearchChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
   onWatchedStatusChange: (value: string) => void;
+  onTagAdd: (tagId: string) => void;
+  onTagRemove: (tagId: string) => void;
   onClearFilters: () => void;
 }
 
@@ -28,19 +31,23 @@ export function SearchAndFilter({
   searchTerm,
   selectedCategory,
   selectedWatchedStatus,
+  selectedTags,
   onSearchChange,
   onCategoryChange,
   onWatchedStatusChange,
+  onTagAdd,
+  onTagRemove,
   onClearFilters,
 }: SearchAndFilterProps) {
-  const { categories } = useData();
+  const { categories, tags } = useData();
   const { openPanel } = usePanel();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const hasActiveFilters =
     searchTerm ||
     (selectedCategory && selectedCategory !== 'all') ||
-    (selectedWatchedStatus && selectedWatchedStatus !== 'all');
+    (selectedWatchedStatus && selectedWatchedStatus !== 'all') ||
+    selectedTags.length > 0;
 
   return (
     <div className="space-y-4">
@@ -78,6 +85,7 @@ export function SearchAndFilter({
                     selectedWatchedStatus !== 'all'
                       ? selectedWatchedStatus
                       : null,
+                    ...selectedTags,
                   ].filter(Boolean).length
                 }
               </span>
@@ -173,6 +181,75 @@ export function SearchAndFilter({
               </Select>
             </div>
 
+            {/* Tags Filter */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Filter by Tags
+              </label>
+              {tags.length === 0 ? (
+                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    No tags available
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    {tags
+                      .filter(tag => !selectedTags.includes(tag._id))
+                      .map((tag) => (
+                        <button
+                          key={tag._id}
+                          onClick={() => onTagAdd(tag._id)}
+                          className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium border hover:bg-muted transition-colors"
+                          style={{
+                            borderColor: `${tag.color}40`,
+                            color: tag.color,
+                          }}
+                        >
+                          <div 
+                            className="w-2 h-2 rounded-full" 
+                            style={{ backgroundColor: tag.color }}
+                          />
+                          {tag.name}
+                        </button>
+                      ))
+                    }
+                  </div>
+                  
+                  {selectedTags.length > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">Selected tags:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedTags.map((tagId) => {
+                          const tag = tags.find(t => t._id === tagId);
+                          return tag ? (
+                            <button
+                              key={tagId}
+                              onClick={() => onTagRemove(tagId)}
+                              className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium border"
+                              style={{
+                                backgroundColor: `${tag.color}20`,
+                                borderColor: `${tag.color}60`,
+                                color: tag.color,
+                              }}
+                            >
+                              <div 
+                                className="w-2 h-2 rounded-full" 
+                                style={{ backgroundColor: tag.color }}
+                              />
+                              {tag.name}
+                              <X className="h-3 w-3 ml-1" />
+                            </button>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Active Filters Display */}
             {hasActiveFilters && (
               <div className="pt-2 border-t">
@@ -215,6 +292,27 @@ export function SearchAndFilter({
                       </button>
                     </span>
                   )}
+                  {selectedTags.map((tagId) => {
+                    const tag = tags.find(t => t._id === tagId);
+                    return tag ? (
+                      <span 
+                        key={tagId}
+                        className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-xs flex items-center gap-1"
+                      >
+                        <div 
+                          className="w-2 h-2 rounded-full" 
+                          style={{ backgroundColor: tag.color }}
+                        />
+                        {tag.name}
+                        <button
+                          onClick={() => onTagRemove(tagId)}
+                          className="hover:bg-secondary-foreground/20 rounded-full p-0.5"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ) : null;
+                  })}
                 </div>
               </div>
             )}

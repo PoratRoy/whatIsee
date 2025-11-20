@@ -7,17 +7,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Film, MoreVertical, Trash2 } from 'lucide-react';
-import { type MovieData } from '@/app/actions/getAllUserMovies';
-import { deleteMovie } from '@/app/actions/deleteMovie';
+import { Tv, MoreVertical, Trash2 } from 'lucide-react';
+import { type SeriesData } from '@/app/actions/getAllUserSeries';
 import { useState } from 'react';
 
-interface MovieCardProps {
-  movie: MovieData;
-  onMovieDeleted?: () => void;
+interface SeriesCardProps {
+  series: SeriesData;
+  onSeriesDeleted?: () => void;
 }
 
-export function MovieCard({ movie, onMovieDeleted }: MovieCardProps) {
+export function SeriesCard({ series, onSeriesDeleted }: SeriesCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
@@ -25,15 +24,16 @@ export function MovieCard({ movie, onMovieDeleted }: MovieCardProps) {
     
     setIsDeleting(true);
     try {
-      const result = await deleteMovie(movie._id);
-      if (result.success) {
-        onMovieDeleted?.();
-      } else {
-        console.error('Failed to delete movie:', result.error);
-        // You could add a toast notification here
-      }
+      // TODO: Create deleteSeries action
+      console.log('Delete series:', series._id);
+      // const result = await deleteSeries(series._id);
+      // if (result.success) {
+      //   onSeriesDeleted?.();
+      // } else {
+      //   console.error('Failed to delete series:', result.error);
+      // }
     } catch (error) {
-      console.error('Error deleting movie:', error);
+      console.error('Error deleting series:', error);
     } finally {
       setIsDeleting(false);
     }
@@ -43,16 +43,16 @@ export function MovieCard({ movie, onMovieDeleted }: MovieCardProps) {
     <Card className="">
       <CardContent className="p-0">
         <div className="aspect-2/3 relative overflow-hidden rounded-t-lg bg-muted">
-          {movie.image ? (
+          {series.image ? (
             <img
-              src={movie.image}
-              alt={movie.title}
+              src={series.image}
+              alt={series.title}
               className="w-full h-full object-cover"
               loading="lazy"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-muted">
-              <Film className="h-12 w-12 text-muted-foreground" />
+              <Tv className="h-12 w-12 text-muted-foreground" />
             </div>
           )}
           
@@ -75,7 +75,7 @@ export function MovieCard({ movie, onMovieDeleted }: MovieCardProps) {
                   className="text-red-600 focus:text-red-600 focus:bg-red-50"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  {isDeleting ? 'Deleting...' : 'Delete Movie'}
+                  {isDeleting ? 'Deleting...' : 'Delete Series'}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -91,46 +91,44 @@ export function MovieCard({ movie, onMovieDeleted }: MovieCardProps) {
               WebkitBoxOrient: 'vertical',
             }}
           >
-            {movie.title}
+            {series.title}
           </h3>
 
-          {movie.categories.length > 0 && (
+          {/* Seasons info */}
+          <div className="mb-2">
+            <Badge variant="outline" className="text-xs">
+              {series.seasons} {series.seasons === 1 ? 'Season' : 'Seasons'}
+            </Badge>
+          </div>
+
+          {series.categories.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-2">
-              {movie.categories.slice(0, 2).map((category) => (
+              {series.categories.slice(0, 2).map((category) => (
                 <Badge key={category} variant="secondary" className="text-xs">
                   {category}
                 </Badge>
               ))}
-              {movie.categories.length > 2 && (
+              {series.categories.length > 2 && (
                 <Badge variant="outline" className="text-xs">
-                  +{movie.categories.length - 2}
+                  +{series.categories.length - 2}
                 </Badge>
               )}
             </div>
           )}
 
-          {movie.tags.length > 0 && (
+          {series.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
-              {movie.tags.slice(0, 3).map((tag) => (
+              {series.tags.slice(0, 3).map((tag) => (
                 <span
-                  key={tag._id}
-                  className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium border"
-                  style={{
-                    backgroundColor: `${tag.color}20`,
-                    borderColor: `${tag.color}40`,
-                    color: tag.color,
-                  }}
+                  key={tag}
+                  className="text-xs text-primary bg-primary/10 border border-primary/20 px-2 py-1 rounded-md font-medium"
                 >
-                  <div 
-                    className="w-2 h-2 rounded-full" 
-                    style={{ backgroundColor: tag.color }}
-                  />
-                  {tag.name}
+                  #{tag}
                 </span>
               ))}
-              {movie.tags.length > 3 && (
+              {series.tags.length > 3 && (
                 <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">
-                  +{movie.tags.length - 3} more
+                  +{series.tags.length - 3} more
                 </span>
               )}
             </div>
